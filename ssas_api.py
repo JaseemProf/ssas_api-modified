@@ -163,31 +163,38 @@ def _parse_DAX_result(table: "DataTable") -> pd.DataFrame:
         rows.append(row)
 
     df = pd.DataFrame.from_records(rows, columns=[c.ColumnName for c in cols])
-
     # replace System.DBNull with None
     # df.replace({System.DBNull: np.NaN}) doesn't work for some reason
     df = df.map(lambda x: np.NaN if isinstance(x, System.DBNull) else x)  # Changes applymap to map 
 
+    # convert other types
+    types_map = {"System.Int64": int, "System.Decimal": float, "System.String": str}
+    col_types = {c.ColumnName: types_map.get(c.DataType.FullName, "object") for c in cols}
+    print(col_types)
+    
+    # handle NaNs (which are floats, as of pandas v.0.25.3) in int columns
+    col_types_ints = {k for k,v in col_types.items() if v == int}
+    
+    # Convert the Float Columns to String before changing the type
+    col_types_float = [c.ColumnName for c in cols if c.DataType.FullName == "System.Decimal"]
+    if col_types_float:
+        for dtt in col_types_float:
+            df[dtt] = df[dtt].apply(str)
+    
+    ser = df.isna().any(axis=0)
+    col_types.update({k:float for k in set(ser[ser].index).intersection(col_types_ints)})
+    df = df.astype(col_types)
+
     # convert datetimes
+    print([c.DataType.FullName for c in cols ])
     dt_types = [c.ColumnName for c in cols if c.DataType.FullName == "System.DateTime"]
     if dt_types:
         for dtt in dt_types:
             # if all nulls, then pd.to_datetime will fail
-            if not df.loc[:, dtt].isna().all():
-                ser = df.loc[:, dtt].map(lambda x: x.ToString()).str.split(" ").str[0] # I added .'.str.split(" ").str[0]' so it will only return the date not with time
-                df.loc[:, dtt] = pd.to_datetime(ser, format="%d-%m-%Y") # Added Format to it
+            if not df[dtt].isna().all():
+                ser = df[dtt].map(lambda x: x.ToString()).str.split(" ").str[0] # I added .'.str.split(" ").str[0]' so it will only return the date not with time
+                df[dtt] = pd.to_datetime(ser, format="%d-%m-%Y") # Added Format to it
 
-    # convert other types
-    types_map = {"System.Int64": int, "System.Double": float, "System.String": str}
-    col_types = {c.ColumnName: types_map.get(c.DataType.FullName, "object") for c in cols}
-    
-    # handle NaNs (which are floats, as of pandas v.0.25.3) in int columns
-    col_types_ints = {k for k,v in col_types.items() if v == int}
-    ser = df.isna().any(axis=0)
-    col_types.update({k:float for k in set(ser[ser].index).intersection(col_types_ints)})
-    
-    # convert
-    df = df.astype(col_types)
 
     return df
 
