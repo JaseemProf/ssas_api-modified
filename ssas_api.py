@@ -170,7 +170,6 @@ def _parse_DAX_result(table: "DataTable") -> pd.DataFrame:
     # convert other types
     types_map = {"System.Int64": int, "System.Decimal": float, "System.String": str}
     col_types = {c.ColumnName: types_map.get(c.DataType.FullName, "object") for c in cols}
-    print(col_types)
     
     # handle NaNs (which are floats, as of pandas v.0.25.3) in int columns
     col_types_ints = {k for k,v in col_types.items() if v == int}
@@ -186,7 +185,6 @@ def _parse_DAX_result(table: "DataTable") -> pd.DataFrame:
     df = df.astype(col_types)
 
     # convert datetimes
-    print([c.DataType.FullName for c in cols ])
     dt_types = [c.ColumnName for c in cols if c.DataType.FullName == "System.DateTime"]
     if dt_types:
         for dtt in dt_types:
