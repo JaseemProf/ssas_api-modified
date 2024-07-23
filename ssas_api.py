@@ -168,14 +168,14 @@ def _parse_DAX_result(table: "DataTable") -> pd.DataFrame:
     df = df.map(lambda x: np.NaN if isinstance(x, System.DBNull) else x)  # Changes applymap to map 
 
     # convert other types
-    types_map = {"System.Int64": int, "System.Decimal": float, "System.String": str}
+    types_map = {"System.Int64": int, "System.Double": float, "System.String": str} # I change the type to System.Double 
     col_types = {c.ColumnName: types_map.get(c.DataType.FullName, "object") for c in cols}
     
     # handle NaNs (which are floats, as of pandas v.0.25.3) in int columns
     col_types_ints = {k for k,v in col_types.items() if v == int}
     
     # Convert the Float Columns to String before changing the type
-    col_types_float = [c.ColumnName for c in cols if c.DataType.FullName == "System.Decimal"]
+    col_types_float = [c.ColumnName for c in cols if c.DataType.FullName == "System.Double"] # I change the type to System.Double
     if col_types_float:
         for dtt in col_types_float:
             df[dtt] = df[dtt].apply(str)
@@ -189,10 +189,9 @@ def _parse_DAX_result(table: "DataTable") -> pd.DataFrame:
     if dt_types:
         for dtt in dt_types:
             # if all nulls, then pd.to_datetime will fail
-            if not df[dtt].isna().all():
+            if all(df[dtt].isnull()):
                 ser = df[dtt].map(lambda x: x.ToString()).str.split(" ").str[0] # I added .'.str.split(" ").str[0]' so it will only return the date not with time
                 df[dtt] = pd.to_datetime(ser, format="%d-%m-%Y") # Added Format to it
-
 
     return df
 
