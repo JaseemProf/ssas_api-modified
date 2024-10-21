@@ -6,6 +6,11 @@ import requests
 print (sys.argv[1])
 print (sys.argv[2])
 
+condition = input("Create a new Notebook (Y/N)").lower()
+
+if not condition == "y":
+    sys.exit()
+
 
 home_dir = os.path.expanduser('~')
 
