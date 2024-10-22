@@ -141,6 +141,10 @@ def get_DAX(connection_string, dax_string):
     """
     table = _get_DAX(connection_string, dax_string)
     df = _parse_DAX_result(table)
+    
+    # rename df columns to be more readable
+    df.columns = [re.search(r'\[([^\]]+)\]', item).group(1) for item in df.columns]
+    
     return df
 
 
