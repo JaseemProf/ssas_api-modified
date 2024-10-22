@@ -33,7 +33,7 @@
    "metadata": {},
    "outputs": [],
    "source": [
-    "conn = \"Provider=MSOLAP;Data Source=<<PowerBIServer>>;Initial Catalog='';\""
+    "conn = f\"Provider=MSOLAP;Data Source={server};Initial Catalog='';\""
    ]
   },
   {
