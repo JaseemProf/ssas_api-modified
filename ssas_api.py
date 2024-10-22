@@ -7,7 +7,7 @@ Created on Wed Sep 20 16:59:43 2017
 
 import pandas as pd
 import numpy as np
-
+import re
 from functools import wraps
 from pathlib import Path
 import logging
